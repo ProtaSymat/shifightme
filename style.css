@@ -1,5 +1,13 @@
-html, body {
-    margin:0;
-    padding:0;
-    display: border-box;
+html,
+body {
+  margin: 0px;
+  padding: 0px;
+  overflow: hidden;
+  height: 100%;
 }
+
+canvas {
+    position: absolute !important;
+    display: block !important;
+  }
+
