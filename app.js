@@ -11,6 +11,7 @@ class PreloadScene extends Phaser.Scene {
 
   preload() {
     this.load.image('background', 'images/backgroundMenu.png');
+    this.load.image('star', 'images/coin-cihan.png')
     this.load.image('ground', 'images/brick.png')
     this.load.image('cihan', 'images/cihan.png')
   }
@@ -63,16 +64,51 @@ class MainScene extends Phaser.Scene {
 let platform1 = platforms.create(800, 500, 'ground').setDisplaySize(100, 50);
 let platform2 = platforms.create(200, 300, 'ground').setDisplaySize(100, 50);
 let platform3 = platforms.create(300, 300, 'ground').setDisplaySize(100, 50);
+let platform4 = platforms.create(1100, 800, 'ground').setDisplaySize(100, 50);
+let platform5 = platforms.create(650, 630, 'ground').setDisplaySize(100, 50);
+let platform6 = platforms.create(900, 900, 'ground').setDisplaySize(100, 50);
 
   
 platform1.refreshBody();  // Add this line
 platform2.refreshBody();
 platform3.refreshBody();
+platform4.refreshBody();  // Add this line
+platform5.refreshBody();
+platform6.refreshBody();
 
       this.player = new Player(this, 450, 450)
-   
-      this.physics.add.collider(this.player, platforms); 
-  
+      
+    // add the stars
+    let stars = this.physics.add.group({
+      key: 'star',
+      repeat: 22,
+      setXY: { x: 12, y: 0, stepX: 70 }
+    })
+    stars.children.iterate((child) => {
+      child.setScale(0.2, 0.2);  // reduce the size of the stars by 50%
+      child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8))
+      child.setInteractive().on('pointerdown', () => {
+        console.log('star body', child.body)
+        console.log('you hit a star')
+      })
+    })
+
+    let score = 0
+
+    let scoreText = this.add
+      .text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' })
+      .setOrigin(0)
+      .setScrollFactor(0)
+
+    const collectStar = (player, star) => {
+      star.disableBody(true, true)
+      score += 10
+      scoreText.setText('Score: ' + score)
+    }
+
+      this.physics.add.collider(this.player, platforms, () => this.player.canJump = 2);
+      this.physics.add.collider(stars, platforms) 
+      this.physics.add.overlap(this.player, stars, collectStar)
       this.cursors = this.input.keyboard.createCursorKeys()
       this.cameras.main.startFollow(this.player, true)
 
@@ -89,6 +125,7 @@ platform3.refreshBody();
     })
     console.log('resize in scene')
     resize()
+    
   }
 
   update() {
@@ -122,7 +159,6 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       super(scene, x, y, 'cihan')
       scene.add.existing(this)
       scene.physics.add.existing(this)
-  
       this.setCollideWorldBounds(true)
       this.setScale(0.2, 0.2);
       this.body.setSize(this.width, this.height);
@@ -133,19 +169,26 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
   
     update(cursors) {
-      if (cursors.left.isDown) {
-        this.setVelocityX(-160 * 2)
-  
-      } else if (cursors.right.isDown) {
-        this.setVelocityX(160 * 2)
-  
-      } else {
-        this.setVelocityX(0)
-  
+      if (this.body.blocked.down || this.body.touching.down) {
+        this.canJump = true;
+        this.isJumping = false;
       }
   
-      if (cursors.up.isDown /*&& this.body.touching.down*/) {
-        this.setVelocityY(-330 * 1.5)
+      if (cursors.left.isDown) {
+        this.setVelocityX(-160 * 2)
+      } else if (cursors.right.isDown) {
+        this.setVelocityX(160 * 2)
+      } else {
+        this.setVelocityX(0)
+      }
+  
+      if (Phaser.Input.Keyboard.JustDown(cursors.up) && this.canJump) {
+        this.setVelocityY(-330 * 1.5);
+        this.isJumping = true;
+        this.canJump = false;
+      } else if (Phaser.Input.Keyboard.JustDown(cursors.up) && this.isJumping) {
+        this.setVelocityY(-330 * 1.5);
+        this.isJumping = false;
       }
     }
   }
